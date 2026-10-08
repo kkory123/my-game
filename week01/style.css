@@ -167,6 +167,11 @@ h2 {
   margin: 0;
 }
 
+.page-footer .deployment-note {
+  margin-top: 8px;
+  font-size: 0.6rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
