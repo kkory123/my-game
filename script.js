@@ -3,7 +3,7 @@ const canvas = document.getElementById("game");
 // 캔버스에 2D 그림을 그리는 도구를 가져옵니다.
 const ctx = canvas.getContext("2d");
 
-// 화면 크기에 맞춘 길과 이미지의 크기, 위치를 모아 둡니다.
+// 화면 크기에 맞춘 길과 사각형의 크기, 위치를 모아 둡니다.
 const roadHeight = canvas.height / 8;
 const playerSize = 32;
 const destinationSize = 32;
@@ -16,14 +16,6 @@ const playerY = canvas.height - roadHeight / 2 - playerSize / 2;
 const destinationX = (canvas.width - destinationSize) / 2;
 const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
-
-// 플레이어 이미지와 장애물 이미지를 로드합니다.
-const playerImage = new Image();
-playerImage.src = "img/car-blue-1.png";
-
-const obstacleImage = new Image();
-obstacleImage.src = "img/car-red-5.png";
-
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
   { x: 100, lane: 2 },
@@ -41,45 +33,34 @@ const obstacles = [
   })),
 ];
 
-// 모든 이미지가 로드된 뒤, 게임 화면을 그립니다.
-function drawGame() {
-  // 화면 전체를 초록색 들판으로 채웁니다.
-  ctx.fillStyle = "#4caf50";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+// 화면 전체를 초록색 들판으로 채웁니다.
+ctx.fillStyle = "#4caf50";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // 화면 아래쪽 1/8을 회색 길로 그립니다.
-  ctx.fillStyle = "#777";
-  ctx.fillRect(0, canvas.height - roadHeight, canvas.width, roadHeight);
+// 화면 아래쪽 1/8을 회색 길로 그립니다.
+ctx.fillStyle = "#777";
+ctx.fillRect(0, canvas.height - roadHeight, canvas.width, roadHeight);
 
-  // 화면 위쪽 1/8을 회색 길로 그립니다.
-  ctx.fillRect(0, 0, canvas.width, roadHeight);
+// 화면 위쪽 1/8을 회색 길로 그립니다.
+ctx.fillRect(0, 0, canvas.width, roadHeight);
 
-  // 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
-  ctx.fillStyle = "white";
-  ctx.font = livesFont;
-  ctx.fillText("남은 목숨 : 3", livesTextX, livesTextY);
+// 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
+ctx.fillStyle = "white";
+ctx.font = livesFont;
+ctx.fillText("남은 목숨 : 3", livesTextX, livesTextY);
 
-  // 화면 위 가운데에 초록색 목적지를 그립니다.
-  ctx.fillStyle = "green";
-  ctx.fillRect(destinationX, destinationY, destinationSize, destinationSize);
+// 화면 아래 가운데에 파란색 플레이어를 그립니다.
+ctx.fillStyle = "blue";
+ctx.fillRect(playerX, playerY, playerSize, playerSize);
 
-  // 설정한 여섯 위치에 빨간 장애물 이미지를 하나씩 그립니다.
-  obstacles.forEach((obstacle) => {
-    ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
-  });
+// 화면 위 가운데에 초록색 목적지를 그립니다.
+ctx.fillStyle = "green";
+ctx.globalAlpha = 0.5;
+ctx.fillRect(destinationX, destinationY, destinationSize, destinationSize);
+ctx.globalAlpha = 1;
 
-  // 화면 아래 가운데에 파란 플레이어 이미지를 그립니다.
-  ctx.drawImage(playerImage, playerX, playerY, playerSize, playerSize);
-}
-
-// 이미지 로딩이 끝난 뒤에 한 번만 그립니다.
-const imagesToLoad = [playerImage, obstacleImage];
-let loadedCount = 0;
-imagesToLoad.forEach((image) => {
-  image.onload = () => {
-    loadedCount += 1;
-    if (loadedCount === imagesToLoad.length) {
-      drawGame();
-    }
-  };
+// 설정한 여섯 위치에 빨간색 장애물을 하나씩 그립니다.
+ctx.fillStyle = "red";
+obstacles.forEach((obstacle) => {
+  ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
 });
