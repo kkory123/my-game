@@ -1,37 +1,49 @@
 // HTML에서 id가 "game"인 캔버스 요소를 가져옵니다.
 const canvas = document.getElementById("game");
-// 캔버스에 2D 그림을 그릴 수 있는 도구를 가져옵니다.
+// 캔버스에 2D 그림을 그리는 도구를 가져옵니다.
 const ctx = canvas.getContext("2d");
 
-// 첫 번째 사각형의 색을 빨간색으로 정합니다.
-ctx.fillStyle = "red";
-// (0, 0) 위치에서 가로 50, 세로 50 크기의 빨간 사각형을 그립니다.
-ctx.fillRect(0, 0, 50, 50);
+// 화면 크기에 맞춘 길과 사각형의 크기, 위치를 모아 둡니다.
+const roadHeight = canvas.height / 8;
+const playerSize = 32;
+const destinationSize = 32;
+const obstacleWidth = 42;
+const obstacleHeight = 28;
+const playerX = (canvas.width - playerSize) / 2;
+const playerY = canvas.height - roadHeight / 2 - playerSize / 2;
+const destinationX = (canvas.width - destinationSize) / 2;
+const destinationY = (roadHeight - destinationSize) / 2;
+// 장애물을 2/8부터 7/8 높이에 하나씩 배치하며, 각 좌표는 쉽게 바꿀 수 있습니다.
+const obstacles = [
+  { x: 100, y: (canvas.height * 2) / 8 - obstacleHeight / 2 },
+  { x: 250, y: (canvas.height * 3) / 8 - obstacleHeight / 2 },
+  { x: 400, y: (canvas.height * 4) / 8 - obstacleHeight / 2 },
+  { x: 550, y: (canvas.height * 5) / 8 - obstacleHeight / 2 },
+  { x: 650, y: (canvas.height * 6) / 8 - obstacleHeight / 2 },
+  { x: 300, y: (canvas.height * 7) / 8 - obstacleHeight / 2 },
+];
 
-// 두 번째 사각형의 색을 노란색으로 정합니다.
-ctx.fillStyle = "yellow";
-// (750, 0) 위치에서 가로 50, 세로 50 크기의 노란 사각형을 그립니다.
-ctx.fillRect(750, 0, 50, 50);
+// 화면 전체를 초록색 들판으로 채웁니다.
+ctx.fillStyle = "#4caf50";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// 세 번째 사각형의 색을 초록색으로 정합니다.
+// 화면 아래쪽 1/8을 회색 길로 그립니다.
+ctx.fillStyle = "#777";
+ctx.fillRect(0, canvas.height - roadHeight, canvas.width, roadHeight);
+
+// 화면 위쪽 1/8을 회색 길로 그립니다.
+ctx.fillRect(0, 0, canvas.width, roadHeight);
+
+// 화면 아래 가운데에 파란색 플레이어를 그립니다.
+ctx.fillStyle = "blue";
+ctx.fillRect(playerX, playerY, playerSize, playerSize);
+
+// 화면 위 가운데에 초록색 목적지를 그립니다.
 ctx.fillStyle = "green";
-// (0, 550) 위치에서 가로 50, 세로 50 크기의 초록 사각형을 그립니다.
-ctx.fillRect(0, 550, 50, 50);
+ctx.fillRect(destinationX, destinationY, destinationSize, destinationSize);
 
-// 네 번째 사각형의 색을 흰색으로 정합니다.
-ctx.fillStyle = "white";
-// (400, 300) 위치에서 가로 20, 세로 20 크기의 흰 사각형을 그립니다.
-ctx.fillRect(400, 300, 20, 20);
-
-// 좌표 글씨의 색을 흰색으로 정합니다.
-ctx.fillStyle = "white";
-// 좌표 글씨의 크기와 글꼴을 정합니다.
-ctx.font = "12px sans-serif";
-// 빨간 사각형 오른쪽에 시작 좌표를 표시합니다.
-ctx.fillText("(0, 0)", 55, 25);
-// 노란 사각형 왼쪽에 시작 좌표를 표시합니다.
-ctx.fillText("(750, 0)", 690, 25);
-// 초록 사각형 오른쪽에 시작 좌표를 표시합니다.
-ctx.fillText("(0, 550)", 55, 580);
-// 흰 사각형 오른쪽에 시작 좌표를 표시합니다.
-ctx.fillText("(400, 300)", 425, 315);
+// 설정한 여섯 위치에 빨간색 장애물을 하나씩 그립니다.
+ctx.fillStyle = "red";
+obstacles.forEach((obstacle) => {
+  ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
+});
