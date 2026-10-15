@@ -16,14 +16,14 @@ const playerY = canvas.height - roadHeight / 2 - playerSize / 2;
 const destinationX = (canvas.width - destinationSize) / 2;
 const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
-// 장애물을 2/8부터 7/8 높이에 하나씩 배치하며, 각 좌표는 쉽게 바꿀 수 있습니다.
+// 2/8부터 7/8까지 각 레인의 세로 중앙에 장애물을 하나씩 배치합니다.
 const obstacles = [
-  { x: 100, y: (canvas.height * 2) / 8 - obstacleHeight / 2 },
-  { x: 250, y: (canvas.height * 3) / 8 - obstacleHeight / 2 },
-  { x: 400, y: (canvas.height * 4) / 8 - obstacleHeight / 2 },
-  { x: 550, y: (canvas.height * 5) / 8 - obstacleHeight / 2 },
-  { x: 650, y: (canvas.height * 6) / 8 - obstacleHeight / 2 },
-  { x: 300, y: (canvas.height * 7) / 8 - obstacleHeight / 2 },
+  { x: 100, y: (canvas.height * 2) / 8 + (roadHeight - obstacleHeight) / 2 },
+  { x: 250, y: (canvas.height * 3) / 8 + (roadHeight - obstacleHeight) / 2 },
+  { x: 400, y: (canvas.height * 4) / 8 + (roadHeight - obstacleHeight) / 2 },
+  { x: 550, y: (canvas.height * 5) / 8 + (roadHeight - obstacleHeight) / 2 },
+  { x: 650, y: (canvas.height * 6) / 8 + (roadHeight - obstacleHeight) / 2 },
+  { x: 300, y: (canvas.height * 7) / 8 + (roadHeight - obstacleHeight) / 2 },
 ];
 
 // 화면 전체를 초록색 들판으로 채웁니다.
