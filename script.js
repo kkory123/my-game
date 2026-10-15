@@ -16,14 +16,21 @@ const playerY = canvas.height - roadHeight / 2 - playerSize / 2;
 const destinationX = (canvas.width - destinationSize) / 2;
 const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
-// 2/8부터 7/8까지 각 레인의 세로 중앙에 장애물을 하나씩 배치합니다.
+// 각 장애물의 가로 위치와 레인 번호를 정합니다.
+const obstacleLanes = [
+  { x: 100, lane: 2 },
+  { x: 250, lane: 3 },
+  { x: 400, lane: 4 },
+  { x: 550, lane: 5 },
+  { x: 650, lane: 6 },
+  { x: 300, lane: 7 },
+];
+// 2/8~7/8에 해당하는 여섯 레인의 중앙에 장애물을 배치합니다.
 const obstacles = [
-  { x: 100, y: (canvas.height * 2) / 8 + (roadHeight - obstacleHeight) / 2 },
-  { x: 250, y: (canvas.height * 3) / 8 + (roadHeight - obstacleHeight) / 2 },
-  { x: 400, y: (canvas.height * 4) / 8 + (roadHeight - obstacleHeight) / 2 },
-  { x: 550, y: (canvas.height * 5) / 8 + (roadHeight - obstacleHeight) / 2 },
-  { x: 650, y: (canvas.height * 6) / 8 + (roadHeight - obstacleHeight) / 2 },
-  { x: 300, y: (canvas.height * 7) / 8 + (roadHeight - obstacleHeight) / 2 },
+  ...obstacleLanes.map(({ x, lane }) => ({
+    x,
+    y: (lane - 0.5) * roadHeight - obstacleHeight / 2,
+  })),
 ];
 
 // 화면 전체를 초록색 들판으로 채웁니다.
