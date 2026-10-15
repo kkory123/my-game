@@ -9,10 +9,13 @@ const playerSize = 32;
 const destinationSize = 32;
 const obstacleWidth = 42;
 const obstacleHeight = 28;
+const livesTextX = 12;
+const livesTextY = 28;
 const playerX = (canvas.width - playerSize) / 2;
 const playerY = canvas.height - roadHeight / 2 - playerSize / 2;
 const destinationX = (canvas.width - destinationSize) / 2;
 const destinationY = (roadHeight - destinationSize) / 2;
+const livesFont = "20px sans-serif";
 // 장애물을 2/8부터 7/8 높이에 하나씩 배치하며, 각 좌표는 쉽게 바꿀 수 있습니다.
 const obstacles = [
   { x: 100, y: (canvas.height * 2) / 8 - obstacleHeight / 2 },
@@ -33,6 +36,11 @@ ctx.fillRect(0, canvas.height - roadHeight, canvas.width, roadHeight);
 
 // 화면 위쪽 1/8을 회색 길로 그립니다.
 ctx.fillRect(0, 0, canvas.width, roadHeight);
+
+// 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
+ctx.fillStyle = "white";
+ctx.font = livesFont;
+ctx.fillText("남은 목숨 : 3", livesTextX, livesTextY);
 
 // 화면 아래 가운데에 파란색 플레이어를 그립니다.
 ctx.fillStyle = "blue";
