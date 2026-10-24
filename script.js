@@ -18,8 +18,8 @@ const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
 
 // 장애물 애니메이션 설정 (이동 속도는 픽셀/프레임)
-const obstacleMinSpeed = 3;
-const obstacleMaxSpeed = 5.5;
+const obstacleMinSpeed = 3.5;
+const obstacleMaxSpeed = 4.5;
 const obstacleScaleChange = 0.015;
 const obstacleMaxScale = (roadHeight - 4) / obstacleHeight;
 
@@ -34,10 +34,12 @@ const obstacleLanes = [
 ];
 // 2/8~7/8에 해당하는 여섯 레인의 중앙에 장애물을 배치합니다.
 const obstacles = [
-  ...obstacleLanes.map(({ x, lane }) => ({
+  ...obstacleLanes.map(({ x, lane }, index) => ({
     x,
     lane,
-    speed: obstacleMinSpeed + Math.random() * (obstacleMaxSpeed - obstacleMinSpeed),
+    speed:
+      obstacleMinSpeed +
+      (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
     scale: 1,
     scaleDirection: 1,
   })),
