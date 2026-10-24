@@ -21,7 +21,7 @@ const livesFont = "20px sans-serif";
 const obstacleMinSpeed = 3.5;
 const obstacleMaxSpeed = 4.5;
 const obstacleScaleChange = 0.015;
-const obstacleMaxScale = (roadHeight - 4) / obstacleHeight;
+const obstacleMaxScale = 1 + (((roadHeight - 4) / obstacleHeight) - 1) * 0.9;
 
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
