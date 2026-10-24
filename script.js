@@ -17,14 +17,11 @@ const destinationX = (canvas.width - destinationSize) / 2;
 const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
 
-// 장애물 이동 속도 설정 (픽셀/프레임)
-const obstacleSpeeds = [0.8, 1.6, 2.5, 3.5, 4.8, 6];
-
-/*
-  | 0.8 | 너무 느려서 지루하다 | 탈락 |
-  | 1.6 | 마찬가지로 너무 느리다| 탈락 |
-  | 3.5 | 적당히 빠르다. 해당 속도를 기준으로 한다 | 채택 |
-*/
+// 장애물 애니메이션 설정 (이동 속도는 픽셀/프레임)
+const obstacleMinSpeed = 3.5;
+const obstacleMaxSpeed = 6;
+const obstacleScaleChange = 0.015;
+const obstacleMaxScale = (roadHeight - 4) / obstacleHeight;
 
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
@@ -37,10 +34,12 @@ const obstacleLanes = [
 ];
 // 2/8~7/8에 해당하는 여섯 레인의 중앙에 장애물을 배치합니다.
 const obstacles = [
-  ...obstacleLanes.map(({ x, lane }, index) => ({
+  ...obstacleLanes.map(({ x, lane }) => ({
     x,
-    y: (lane - 0.5) * roadHeight - obstacleHeight / 2,
-    speed: obstacleSpeeds[index],
+    lane,
+    speed: obstacleMinSpeed + Math.random() * (obstacleMaxSpeed - obstacleMinSpeed),
+    scale: 1,
+    scaleDirection: 1,
   })),
 ];
 
@@ -55,6 +54,30 @@ function drawScene() {
 
   // 화면 위쪽 1/8을 회색 길로 그립니다.
   ctx.fillRect(0, 0, canvas.width, roadHeight);
+
+  // 장애물이 다니는 여섯 레인을 짙은 회색으로 칠합니다.
+  ctx.fillStyle = "#333";
+  ctx.fillRect(0, roadHeight, canvas.width, roadHeight * 6);
+
+  // 레인 경계를 얇은 노란색 선으로 표시합니다.
+  ctx.strokeStyle = "#ffd600";
+  ctx.lineWidth = 2;
+  for (let laneEdge = 1; laneEdge <= 7; laneEdge += 1) {
+    const y = laneEdge * roadHeight;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  // 각 레인 중앙에 일정한 간격으로 흰색 도로 표시를 그립니다.
+  ctx.fillStyle = "white";
+  for (let lane = 2; lane <= 7; lane += 1) {
+    const markerY = (lane - 0.5) * roadHeight - 2;
+    for (let x = 16; x < canvas.width; x += 48) {
+      ctx.fillRect(x, markerY, 18, 4);
+    }
+  }
 
   // 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
   ctx.fillStyle = "white";
@@ -74,14 +97,29 @@ function drawScene() {
   // 설정한 여섯 위치에 빨간색 장애물을 하나씩 그립니다.
   ctx.fillStyle = "red";
   obstacles.forEach((obstacle) => {
-    ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
+    const width = obstacleWidth * obstacle.scale;
+    const height = obstacleHeight * obstacle.scale;
+    const x = obstacle.x - (width - obstacleWidth) / 2;
+    const y = (obstacle.lane - 0.5) * roadHeight - height / 2;
+    ctx.fillRect(x, y, width, height);
   });
 }
 
 function animate() {
   obstacles.forEach((obstacle) => {
     obstacle.x -= obstacle.speed;
-    if (obstacle.x + obstacleWidth <= 0) {
+    obstacle.scale += obstacleScaleChange * obstacle.scaleDirection;
+    if (obstacle.scale >= obstacleMaxScale) {
+      obstacle.scale = obstacleMaxScale;
+      obstacle.scaleDirection = -1;
+    } else if (obstacle.scale <= 1) {
+      obstacle.scale = 1;
+      obstacle.scaleDirection = 1;
+    }
+
+    const width = obstacleWidth * obstacle.scale;
+    const x = obstacle.x - (width - obstacleWidth) / 2;
+    if (x + width <= 0) {
       obstacle.x = canvas.width;
     }
   });
