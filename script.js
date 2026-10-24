@@ -18,8 +18,8 @@ const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
 
 // 장애물 애니메이션 설정 (이동 속도는 픽셀/프레임)
-const obstacleMinSpeed = 3.5;
-const obstacleMaxSpeed = 6;
+const obstacleMinSpeed = 3;
+const obstacleMaxSpeed = 5.5;
 const obstacleScaleChange = 0.015;
 const obstacleMaxScale = (roadHeight - 4) / obstacleHeight;
 
