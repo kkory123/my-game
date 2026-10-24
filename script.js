@@ -16,6 +16,10 @@ const playerY = canvas.height - roadHeight / 2 - playerSize / 2;
 const destinationX = (canvas.width - destinationSize) / 2;
 const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
+
+// 장애물 이동 속도 설정 (픽셀/프레임)
+const obstacleSpeeds = [0.8, 1.6, 2.5, 3.5, 4.8, 6];
+
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
   { x: 100, lane: 2 },
@@ -27,40 +31,57 @@ const obstacleLanes = [
 ];
 // 2/8~7/8에 해당하는 여섯 레인의 중앙에 장애물을 배치합니다.
 const obstacles = [
-  ...obstacleLanes.map(({ x, lane }) => ({
+  ...obstacleLanes.map(({ x, lane }, index) => ({
     x,
     y: (lane - 0.5) * roadHeight - obstacleHeight / 2,
+    speed: obstacleSpeeds[index],
   })),
 ];
 
-// 화면 전체를 초록색 들판으로 채웁니다.
-ctx.fillStyle = "#4caf50";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+function drawScene() {
+  // 화면 전체를 초록색 들판으로 채웁니다.
+  ctx.fillStyle = "#4caf50";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// 화면 아래쪽 1/8을 회색 길로 그립니다.
-ctx.fillStyle = "#777";
-ctx.fillRect(0, canvas.height - roadHeight, canvas.width, roadHeight);
+  // 화면 아래쪽 1/8을 회색 길로 그립니다.
+  ctx.fillStyle = "#777";
+  ctx.fillRect(0, canvas.height - roadHeight, canvas.width, roadHeight);
 
-// 화면 위쪽 1/8을 회색 길로 그립니다.
-ctx.fillRect(0, 0, canvas.width, roadHeight);
+  // 화면 위쪽 1/8을 회색 길로 그립니다.
+  ctx.fillRect(0, 0, canvas.width, roadHeight);
 
-// 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
-ctx.fillStyle = "white";
-ctx.font = livesFont;
-ctx.fillText("남은 목숨 : 3", livesTextX, livesTextY);
+  // 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
+  ctx.fillStyle = "white";
+  ctx.font = livesFont;
+  ctx.fillText("남은 목숨 : 3", livesTextX, livesTextY);
 
-// 화면 아래 가운데에 파란색 플레이어를 그립니다.
-ctx.fillStyle = "blue";
-ctx.fillRect(playerX, playerY, playerSize, playerSize);
+  // 화면 아래 가운데에 파란색 플레이어를 그립니다.
+  ctx.fillStyle = "blue";
+  ctx.fillRect(playerX, playerY, playerSize, playerSize);
 
-// 화면 위 가운데에 초록색 목적지를 그립니다.
-ctx.fillStyle = "green";
-ctx.globalAlpha = 0.5;
-ctx.fillRect(destinationX, destinationY, destinationSize, destinationSize);
-ctx.globalAlpha = 1;
+  // 화면 위 가운데에 초록색 목적지를 그립니다.
+  ctx.fillStyle = "green";
+  ctx.globalAlpha = 0.5;
+  ctx.fillRect(destinationX, destinationY, destinationSize, destinationSize);
+  ctx.globalAlpha = 1;
 
-// 설정한 여섯 위치에 빨간색 장애물을 하나씩 그립니다.
-ctx.fillStyle = "red";
-obstacles.forEach((obstacle) => {
-  ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
-});
+  // 설정한 여섯 위치에 빨간색 장애물을 하나씩 그립니다.
+  ctx.fillStyle = "red";
+  obstacles.forEach((obstacle) => {
+    ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
+  });
+}
+
+function animate() {
+  obstacles.forEach((obstacle) => {
+    obstacle.x -= obstacle.speed;
+    if (obstacle.x + obstacleWidth <= 0) {
+      obstacle.x = canvas.width;
+    }
+  });
+
+  drawScene();
+  requestAnimationFrame(animate);
+}
+
+animate();
