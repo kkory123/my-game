@@ -4,25 +4,22 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 // 화면 크기에 맞춘 길과 사각형의 크기, 위치를 모아 둡니다.
-const roadHeight = canvas.height / 8;
 const playerSize = 32;
 const destinationSize = 32;
 const obstacleWidth = 42;
 const obstacleHeight = 28;
 const livesTextX = 12;
 const livesTextY = 28;
-const destinationX = (canvas.width - destinationSize) / 2;
-const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
 
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
 const playerSpeed = 240;
 const maxFrameTime = 0.05;
 
-// 누르고 있는 키와 플레이어의 현재 위치를 기록합니다.
+// 누르고 있는 키와 플레이어의 이동량을 기록합니다.
 const keys = {};
-let playerX = (canvas.width - playerSize) / 2;
-let playerY = canvas.height - roadHeight / 2 - playerSize / 2;
+let playerOffsetX = 0;
+let playerOffsetY = 0;
 let previousFrameTime = 0;
 
 // 방향키와 스페이스바가 페이지를 스크롤하지 않도록 막습니다.
@@ -46,7 +43,6 @@ window.addEventListener("keyup", (event) => {
 const obstacleMinSpeed = 3.5;
 const obstacleMaxSpeed = 4.5;
 const obstacleScaleChange = 0.015;
-const obstacleMaxScale = 1 + (((roadHeight - 4) / obstacleHeight) - 1) * 0.9;
 
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
@@ -70,7 +66,53 @@ const obstacles = [
   })),
 ];
 
-function drawScene() {
+function drawScene(deltaTime) {
+  const roadHeight = canvas.height / 8;
+  const destinationX = (canvas.width - destinationSize) / 2;
+  const destinationY = (roadHeight - destinationSize) / 2;
+  const obstacleMaxScale = 1 + (((roadHeight - 4) / obstacleHeight) - 1) * 0.9;
+
+  const horizontalDirection =
+    Number(keys.ArrowRight || keys.KeyD) - Number(keys.ArrowLeft || keys.KeyA);
+  const verticalDirection =
+    Number(keys.ArrowDown || keys.KeyS) - Number(keys.ArrowUp || keys.KeyW);
+  const initialPlayerX = (canvas.width - playerSize) / 2;
+  const initialPlayerY = canvas.height - roadHeight / 2 - playerSize / 2;
+  const playerX = Math.max(
+    0,
+    Math.min(
+      canvas.width - playerSize,
+      initialPlayerX + playerOffsetX + horizontalDirection * playerSpeed * deltaTime,
+    ),
+  );
+  const playerY = Math.max(
+    0,
+    Math.min(
+      canvas.height - playerSize,
+      initialPlayerY + playerOffsetY + verticalDirection * playerSpeed * deltaTime,
+    ),
+  );
+  playerOffsetX = playerX - initialPlayerX;
+  playerOffsetY = playerY - initialPlayerY;
+
+  obstacles.forEach((obstacle) => {
+    obstacle.x -= obstacle.speed;
+    obstacle.scale += obstacleScaleChange * obstacle.scaleDirection;
+    if (obstacle.scale >= obstacleMaxScale) {
+      obstacle.scale = obstacleMaxScale;
+      obstacle.scaleDirection = -1;
+    } else if (obstacle.scale <= 1) {
+      obstacle.scale = 1;
+      obstacle.scaleDirection = 1;
+    }
+
+    const width = obstacleWidth * obstacle.scale;
+    const x = obstacle.x - (width - obstacleWidth) / 2;
+    if (x + width <= 0) {
+      obstacle.x = canvas.width;
+    }
+  });
+
   // 화면 전체를 초록색 들판으로 채웁니다.
   ctx.fillStyle = "#4caf50";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -140,44 +182,7 @@ function animate(frameTime) {
       : Math.min((frameTime - previousFrameTime) / 1000, maxFrameTime);
   previousFrameTime = frameTime;
 
-  const horizontalDirection =
-    Number(keys.ArrowRight || keys.KeyD) - Number(keys.ArrowLeft || keys.KeyA);
-  const verticalDirection =
-    Number(keys.ArrowDown || keys.KeyS) - Number(keys.ArrowUp || keys.KeyW);
-  playerX = Math.max(
-    0,
-    Math.min(
-      canvas.width - playerSize,
-      playerX + horizontalDirection * playerSpeed * deltaTime,
-    ),
-  );
-  playerY = Math.max(
-    0,
-    Math.min(
-      canvas.height - playerSize,
-      playerY + verticalDirection * playerSpeed * deltaTime,
-    ),
-  );
-
-  obstacles.forEach((obstacle) => {
-    obstacle.x -= obstacle.speed;
-    obstacle.scale += obstacleScaleChange * obstacle.scaleDirection;
-    if (obstacle.scale >= obstacleMaxScale) {
-      obstacle.scale = obstacleMaxScale;
-      obstacle.scaleDirection = -1;
-    } else if (obstacle.scale <= 1) {
-      obstacle.scale = 1;
-      obstacle.scaleDirection = 1;
-    }
-
-    const width = obstacleWidth * obstacle.scale;
-    const x = obstacle.x - (width - obstacleWidth) / 2;
-    if (x + width <= 0) {
-      obstacle.x = canvas.width;
-    }
-  });
-
-  drawScene();
+  drawScene(deltaTime);
   requestAnimationFrame(animate);
 }
 
