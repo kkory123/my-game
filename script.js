@@ -11,11 +11,36 @@ const obstacleWidth = 42;
 const obstacleHeight = 28;
 const livesTextX = 12;
 const livesTextY = 28;
-const playerX = (canvas.width - playerSize) / 2;
-const playerY = canvas.height - roadHeight / 2 - playerSize / 2;
 const destinationX = (canvas.width - destinationSize) / 2;
 const destinationY = (roadHeight - destinationSize) / 2;
 const livesFont = "20px sans-serif";
+
+// 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
+const playerSpeed = 240;
+const maxFrameTime = 0.05;
+
+// 누르고 있는 키와 플레이어의 현재 위치를 기록합니다.
+const keys = {};
+let playerX = (canvas.width - playerSize) / 2;
+let playerY = canvas.height - roadHeight / 2 - playerSize / 2;
+let previousFrameTime = 0;
+
+// 방향키와 스페이스바가 페이지를 스크롤하지 않도록 막습니다.
+function preventPageScroll(event) {
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) {
+    event.preventDefault();
+  }
+}
+
+window.addEventListener("keydown", (event) => {
+  preventPageScroll(event);
+  keys[event.code] = true;
+});
+
+window.addEventListener("keyup", (event) => {
+  preventPageScroll(event);
+  keys[event.code] = false;
+});
 
 // 장애물 애니메이션 설정 (이동 속도는 픽셀/프레임)
 const obstacleMinSpeed = 3.5;
@@ -107,7 +132,33 @@ function drawScene() {
   });
 }
 
-function animate() {
+function animate(frameTime) {
+  // 프레임 간격을 제한해 탭 전환 후에도 플레이어가 갑자기 튀지 않게 합니다.
+  const deltaTime =
+    previousFrameTime === 0
+      ? 0
+      : Math.min((frameTime - previousFrameTime) / 1000, maxFrameTime);
+  previousFrameTime = frameTime;
+
+  const horizontalDirection =
+    Number(keys.ArrowRight || keys.KeyD) - Number(keys.ArrowLeft || keys.KeyA);
+  const verticalDirection =
+    Number(keys.ArrowDown || keys.KeyS) - Number(keys.ArrowUp || keys.KeyW);
+  playerX = Math.max(
+    0,
+    Math.min(
+      canvas.width - playerSize,
+      playerX + horizontalDirection * playerSpeed * deltaTime,
+    ),
+  );
+  playerY = Math.max(
+    0,
+    Math.min(
+      canvas.height - playerSize,
+      playerY + verticalDirection * playerSpeed * deltaTime,
+    ),
+  );
+
   obstacles.forEach((obstacle) => {
     obstacle.x -= obstacle.speed;
     obstacle.scale += obstacleScaleChange * obstacle.scaleDirection;
@@ -130,4 +181,4 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-animate();
+requestAnimationFrame(animate);
