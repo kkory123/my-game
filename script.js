@@ -80,9 +80,9 @@ function drawScene(deltaTime) {
   const obstacleMaxScale = 1 + (((roadHeight - 4) / obstacleHeight) - 1) * 0.9;
 
   const horizontalDirection =
-    Number(keys.ArrowRight || keys.KeyD) - Number(keys.ArrowLeft || keys.KeyA);
+    (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
   const verticalDirection =
-    Number(keys.ArrowDown || keys.KeyS) - Number(keys.ArrowUp || keys.KeyW);
+    (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
   const initialPlayerX = (canvas.width - playerSize) / 2;
   const initialPlayerY = (canvas.height - roadHeight) + (roadHeight - playerSize) / 2;
   const previousPlayerX = initialPlayerX + playerOffsetX;
