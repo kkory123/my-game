@@ -1,3 +1,5 @@
+console.log("게임 스크립트 실행 확인");
+
 // HTML에서 id가 "game"인 캔버스 요소를 가져옵니다.
 const canvas = document.getElementById("game");
 // 캔버스에 2D 그림을 그리는 도구를 가져옵니다.
