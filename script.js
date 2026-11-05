@@ -10,8 +10,8 @@ const obstacleMinSpeed = 8;
 const obstacleMaxSpeed = 10;
 
 // 장애물 크기 설정
-const obstacleWidth = 42;
-const obstacleHeight = 28;
+const obstacleWidth = 42 * 1.2;
+const obstacleHeight = 28 * 1.2;
 
 // 빨간 테두리 히트박스를 표시할지 설정합니다.
 const showHitbox = true;
@@ -33,11 +33,6 @@ const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
 
-const initialRoadHeight = canvas.height / 8;
-console.log(
-  `플레이어 위치: x=${(canvas.width - playerSize) / 2}, y=${canvas.height - initialRoadHeight + (initialRoadHeight - playerSize) / 2}`,
-);
-
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
 /*
 | 120 | 다소 느림 | 탈락 |
@@ -52,7 +47,7 @@ const keys = {};
 let playerOffsetX = 0;
 let playerOffsetY = 0;
 let previousFrameTime = 0;
-let wasColliding = false;
+let gameState = "playing";
 
 // 두 사각형이 가로와 세로 방향 모두에서 겹치는지 확인합니다.
 function checkCollision(rectA, rectB) {
@@ -73,6 +68,10 @@ function preventPageScroll(event) {
 
 window.addEventListener("keydown", (event) => {
   preventPageScroll(event);
+  if (gameState === "gameover" && event.code === "KeyR") {
+    resetGame();
+    return;
+  }
   keys[event.code] = true;
 });
 
@@ -94,73 +93,92 @@ const obstacleLanes = [
 const obstacles = [
   ...obstacleLanes.map(({ x, lane }, index) => ({
     x,
+    initialX: x,
     lane,
     speed:
+      obstacleMinSpeed +
+      (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
+    initialSpeed:
       obstacleMinSpeed +
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
   })),
 ];
 
+// 플레이어와 장애물의 위치 및 속도를 초기 상태로 되돌립니다.
+function resetGame() {
+  playerOffsetX = 0;
+  playerOffsetY = 0;
+  previousFrameTime = 0;
+  Object.keys(keys).forEach((key) => {
+    keys[key] = false;
+  });
+  obstacles.forEach((obstacle) => {
+    obstacle.x = obstacle.initialX;
+    obstacle.speed = obstacle.initialSpeed;
+  });
+  gameState = "playing";
+}
+
 function drawScene(deltaTime) {
   const roadHeight = canvas.height / 8;
   const destinationX = (canvas.width - destinationSize) / 2;
   const destinationY = (roadHeight - destinationSize) / 2;
-
-  const horizontalDirection =
-    (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
-  const verticalDirection =
-    (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
   const initialPlayerX = (canvas.width - playerSize) / 2;
   const initialPlayerY = (canvas.height - roadHeight) + (roadHeight - playerSize) / 2;
-  const previousPlayerX = initialPlayerX + playerOffsetX;
-  const previousPlayerY = initialPlayerY + playerOffsetY;
-  const playerX = Math.max(
-    0,
-    Math.min(
-      canvas.width - playerSize,
-      initialPlayerX + playerOffsetX + horizontalDirection * playerSpeed * deltaTime,
-    ),
-  );
-  const playerY = Math.max(
-    0,
-    Math.min(
-      canvas.height - playerSize,
-      initialPlayerY + playerOffsetY + verticalDirection * playerSpeed * deltaTime,
-    ),
-  );
-  playerOffsetX = playerX - initialPlayerX;
-  playerOffsetY = playerY - initialPlayerY;
-  if (playerX !== previousPlayerX || playerY !== previousPlayerY) {
-    console.log(`플레이어 위치: x=${playerX}, y=${playerY}`);
-  }
+  let playerX = initialPlayerX + playerOffsetX;
+  let playerY = initialPlayerY + playerOffsetY;
 
-  obstacles.forEach((obstacle) => {
-    obstacle.x -= obstacle.speed;
-    if (obstacle.x + obstacleWidth <= 0) {
-      obstacle.x = canvas.width;
-      obstacle.speed = getDifferentObstacleSpeed(obstacle.speed);
+  // 플레이 중일 때만 플레이어와 장애물을 움직이고 충돌을 확인합니다.
+  if (gameState === "playing") {
+    const horizontalDirection =
+      (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+    const verticalDirection =
+      (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+    playerX = Math.max(
+      0,
+      Math.min(
+        canvas.width - playerSize,
+        playerX + horizontalDirection * playerSpeed * deltaTime,
+      ),
+    );
+    playerY = Math.max(
+      0,
+      Math.min(
+        canvas.height - playerSize,
+        playerY + verticalDirection * playerSpeed * deltaTime,
+      ),
+    );
+    playerOffsetX = playerX - initialPlayerX;
+    playerOffsetY = playerY - initialPlayerY;
+
+    obstacles.forEach((obstacle) => {
+      obstacle.x -= obstacle.speed;
+      if (obstacle.x + obstacleWidth <= 0) {
+        obstacle.x = canvas.width;
+        obstacle.speed = getDifferentObstacleSpeed(obstacle.speed);
+      }
+    });
+
+    // 플레이어와 장애물의 사각형이 겹치는지 확인합니다.
+    const playerHitbox = {
+      x: playerX,
+      y: playerY,
+      width: playerSize,
+      height: playerSize,
+    };
+    const isColliding = obstacles.some((obstacle) =>
+      checkCollision(playerHitbox, {
+        x: obstacle.x,
+        y: (obstacle.lane - 0.5) * roadHeight - obstacleHeight / 2,
+        width: obstacleWidth,
+        height: obstacleHeight,
+      }),
+    );
+    if (isColliding) {
+      console.log("충돌!");
+      gameState = "gameover";
     }
-  });
-
-  // 플레이어와 장애물의 사각형이 겹치는지 확인합니다.
-  const playerHitbox = {
-    x: playerX,
-    y: playerY,
-    width: playerSize,
-    height: playerSize,
-  };
-  const isColliding = obstacles.some((obstacle) =>
-    checkCollision(playerHitbox, {
-      x: obstacle.x,
-      y: (obstacle.lane - 0.5) * roadHeight - obstacleHeight / 2,
-      width: obstacleWidth,
-      height: obstacleHeight,
-    }),
-  );
-  if (isColliding && !wasColliding) {
-    console.log("충돌!");
   }
-  wasColliding = isColliding;
 
   // 화면 전체를 초록색 들판으로 채웁니다.
   ctx.fillStyle = "#4caf50";
@@ -228,6 +246,19 @@ function drawScene(deltaTime) {
       ctx.strokeRect(obstacle.x, obstacleY, obstacleWidth, obstacleHeight);
     }
   });
+
+  // 게임 오버 상태에서도 화면은 계속 그리되 게임 오버 안내를 표시합니다.
+  if (gameState === "gameover") {
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 48px sans-serif";
+    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+    ctx.font = "20px sans-serif";
+    ctx.fillText("R 키를 눌러 다시 시작", canvas.width / 2, canvas.height / 2 + 28);
+    ctx.textAlign = "start";
+    ctx.textBaseline = "alphabetic";
+  }
 }
 
 function animate(frameTime) {
