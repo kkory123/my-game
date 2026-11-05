@@ -10,7 +10,7 @@ const obstacleMinSpeed = 8;
 const obstacleMaxSpeed = 10;
 
 // 장애물 크기 설정
-const obstacleWidth = 42 * 1.2;
+const obstacleWidth = 42 * 1.2 * 1.2;
 const obstacleHeight = 28 * 1.2;
 
 // 빨간 테두리 히트박스를 표시할지 설정합니다.
