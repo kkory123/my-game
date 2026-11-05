@@ -9,6 +9,13 @@ const ctx = canvas.getContext("2d");
 const obstacleMinSpeed = 8;
 const obstacleMaxSpeed = 10;
 
+// 장애물 크기 설정
+const obstacleWidth = 42;
+const obstacleHeight = 28;
+
+// 빨간 테두리 히트박스를 표시할지 설정합니다.
+const showHitbox = true;
+
 function getDifferentObstacleSpeed(previousSpeed) {
   const nextSpeed =
     obstacleMinSpeed + Math.random() * (obstacleMaxSpeed - obstacleMinSpeed);
@@ -22,8 +29,6 @@ function getDifferentObstacleSpeed(previousSpeed) {
 // 화면 크기에 맞춘 길과 사각형의 크기, 위치를 모아 둡니다.
 const playerSize = 32;
 const destinationSize = 32;
-const obstacleWidth = 42;
-const obstacleHeight = 28;
 const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
@@ -47,6 +52,17 @@ const keys = {};
 let playerOffsetX = 0;
 let playerOffsetY = 0;
 let previousFrameTime = 0;
+let wasColliding = false;
+
+// 두 사각형이 가로와 세로 방향 모두에서 겹치는지 확인합니다.
+function checkCollision(rectA, rectB) {
+  return (
+    rectA.x < rectB.x + rectB.width &&
+    rectA.x + rectA.width > rectB.x &&
+    rectA.y < rectB.y + rectB.height &&
+    rectA.y + rectA.height > rectB.y
+  );
+}
 
 // 방향키와 스페이스바가 페이지를 스크롤하지 않도록 막습니다.
 function preventPageScroll(event) {
@@ -65,9 +81,6 @@ window.addEventListener("keyup", (event) => {
   keys[event.code] = false;
 });
 
-// 장애물 크기 애니메이션 설정
-const obstacleScaleChange = 0.015;
-
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
   { x: 100, lane: 2 },
@@ -85,8 +98,6 @@ const obstacles = [
     speed:
       obstacleMinSpeed +
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
-    scale: 1,
-    scaleDirection: 1,
   })),
 ];
 
@@ -94,7 +105,6 @@ function drawScene(deltaTime) {
   const roadHeight = canvas.height / 8;
   const destinationX = (canvas.width - destinationSize) / 2;
   const destinationY = (roadHeight - destinationSize) / 2;
-  const obstacleMaxScale = 1 + (((roadHeight - 4) / obstacleHeight) - 1) * 0.9;
 
   const horizontalDirection =
     (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
@@ -126,22 +136,31 @@ function drawScene(deltaTime) {
 
   obstacles.forEach((obstacle) => {
     obstacle.x -= obstacle.speed;
-    obstacle.scale += obstacleScaleChange * obstacle.scaleDirection;
-    if (obstacle.scale >= obstacleMaxScale) {
-      obstacle.scale = obstacleMaxScale;
-      obstacle.scaleDirection = -1;
-    } else if (obstacle.scale <= 1) {
-      obstacle.scale = 1;
-      obstacle.scaleDirection = 1;
-    }
-
-    const width = obstacleWidth * obstacle.scale;
-    const x = obstacle.x - (width - obstacleWidth) / 2;
-    if (x + width <= 0) {
+    if (obstacle.x + obstacleWidth <= 0) {
       obstacle.x = canvas.width;
       obstacle.speed = getDifferentObstacleSpeed(obstacle.speed);
     }
   });
+
+  // 플레이어와 장애물의 사각형이 겹치는지 확인합니다.
+  const playerHitbox = {
+    x: playerX,
+    y: playerY,
+    width: playerSize,
+    height: playerSize,
+  };
+  const isColliding = obstacles.some((obstacle) =>
+    checkCollision(playerHitbox, {
+      x: obstacle.x,
+      y: (obstacle.lane - 0.5) * roadHeight - obstacleHeight / 2,
+      width: obstacleWidth,
+      height: obstacleHeight,
+    }),
+  );
+  if (isColliding && !wasColliding) {
+    console.log("충돌!");
+  }
+  wasColliding = isColliding;
 
   // 화면 전체를 초록색 들판으로 채웁니다.
   ctx.fillStyle = "#4caf50";
@@ -186,6 +205,11 @@ function drawScene(deltaTime) {
   // 화면 아래 가운데에 노란색 플레이어를 그립니다.
   ctx.fillStyle = "yellow";
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
+  if (showHitbox) {
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(playerX, playerY, playerSize, playerSize);
+  }
 
   // 화면 위 가운데에 초록색 목적지를 그립니다.
   ctx.fillStyle = "green";
@@ -196,11 +220,13 @@ function drawScene(deltaTime) {
   // 설정한 여섯 위치에 빨간색 장애물을 하나씩 그립니다.
   ctx.fillStyle = "red";
   obstacles.forEach((obstacle) => {
-    const width = obstacleWidth * obstacle.scale;
-    const height = obstacleHeight * obstacle.scale;
-    const x = obstacle.x - (width - obstacleWidth) / 2;
-    const y = (obstacle.lane - 0.5) * roadHeight - height / 2;
-    ctx.fillRect(x, y, width, height);
+    const obstacleY = (obstacle.lane - 0.5) * roadHeight - obstacleHeight / 2;
+    ctx.fillRect(obstacle.x, obstacleY, obstacleWidth, obstacleHeight);
+    if (showHitbox) {
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(obstacle.x, obstacleY, obstacleWidth, obstacleHeight);
+    }
   });
 }
 
