@@ -79,7 +79,7 @@ function drawScene(deltaTime) {
   const verticalDirection =
     Number(keys.ArrowDown || keys.KeyS) - Number(keys.ArrowUp || keys.KeyW);
   const initialPlayerX = (canvas.width - playerSize) / 2;
-  const initialPlayerY = canvas.height - roadHeight / 2 - playerSize / 2;
+  const initialPlayerY = (canvas.height - roadHeight) + (roadHeight - playerSize) / 2;
   const playerX = Math.max(
     0,
     Math.min(
