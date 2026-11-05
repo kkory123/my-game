@@ -32,6 +32,7 @@ const destinationSize = 32;
 const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
+const startingLives = 3;
 
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
 /*
@@ -48,6 +49,7 @@ let playerOffsetX = 0;
 let playerOffsetY = 0;
 let previousFrameTime = 0;
 let gameState = "playing";
+let lives = startingLives;
 
 // 두 사각형이 가로와 세로 방향 모두에서 겹치는지 확인합니다.
 function checkCollision(rectA, rectB) {
@@ -109,6 +111,7 @@ function resetGame() {
   playerOffsetX = 0;
   playerOffsetY = 0;
   previousFrameTime = 0;
+  lives = startingLives;
   Object.keys(keys).forEach((key) => {
     keys[key] = false;
   });
@@ -176,7 +179,14 @@ function drawScene(deltaTime) {
     );
     if (isColliding) {
       console.log("충돌!");
-      gameState = "gameover";
+      lives -= 1;
+      playerOffsetX = 0;
+      playerOffsetY = 0;
+      playerX = initialPlayerX;
+      playerY = initialPlayerY;
+      if (lives === 0) {
+        gameState = "gameover";
+      }
     }
   }
 
@@ -218,7 +228,7 @@ function drawScene(deltaTime) {
   // 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
   ctx.fillStyle = "white";
   ctx.font = livesFont;
-  ctx.fillText("남은 목숨 : 3", livesTextX, livesTextY);
+  ctx.fillText(`남은 목숨 : ${lives}`, livesTextX, livesTextY);
 
   // 화면 아래 가운데에 노란색 플레이어를 그립니다.
   ctx.fillStyle = "yellow";
@@ -250,7 +260,7 @@ function drawScene(deltaTime) {
   // 게임 오버 상태에서도 화면은 계속 그리되 게임 오버 안내를 표시합니다.
   if (gameState === "gameover") {
     // 캔버스 전체에 옅은 빨간색 반투명 레이어를 덮습니다.
-    ctx.fillStyle = "rgba(255, 0, 0, 0.35)";
+    ctx.fillStyle = "rgba(255, 0, 0, 0.18)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 게임 오버 문구를 레이어 위에 표시합니다.
