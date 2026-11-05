@@ -80,6 +80,8 @@ function drawScene(deltaTime) {
     Number(keys.ArrowDown || keys.KeyS) - Number(keys.ArrowUp || keys.KeyW);
   const initialPlayerX = (canvas.width - playerSize) / 2;
   const initialPlayerY = (canvas.height - roadHeight) + (roadHeight - playerSize) / 2;
+  const previousPlayerX = initialPlayerX + playerOffsetX;
+  const previousPlayerY = initialPlayerY + playerOffsetY;
   const playerX = Math.max(
     0,
     Math.min(
@@ -96,6 +98,9 @@ function drawScene(deltaTime) {
   );
   playerOffsetX = playerX - initialPlayerX;
   playerOffsetY = playerY - initialPlayerY;
+  if (playerX !== previousPlayerX || playerY !== previousPlayerY) {
+    console.log(`플레이어 위치: x=${playerX}, y=${playerY}`);
+  }
 
   obstacles.forEach((obstacle) => {
     obstacle.x -= obstacle.speed;
@@ -155,8 +160,8 @@ function drawScene(deltaTime) {
   ctx.font = livesFont;
   ctx.fillText("남은 목숨 : 3", livesTextX, livesTextY);
 
-  // 화면 아래 가운데에 파란색 플레이어를 그립니다.
-  ctx.fillStyle = "blue";
+  // 화면 아래 가운데에 노란색 플레이어를 그립니다.
+  ctx.fillStyle = "yellow";
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
 
   // 화면 위 가운데에 초록색 목적지를 그립니다.
