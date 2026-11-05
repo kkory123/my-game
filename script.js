@@ -6,8 +6,8 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 // 장애물 속도 설정 (픽셀/프레임)
-const obstacleMinSpeed = 8;
-const obstacleMaxSpeed = 12;
+const obstacleMinSpeed = 4;
+const obstacleMaxSpeed = 8;
 
 function getDifferentObstacleSpeed(previousSpeed) {
   const nextSpeed =
