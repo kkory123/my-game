@@ -10,6 +10,8 @@ const playerSize = 32;
 const destinationSize = 32;
 const obstacleWidth = 42;
 const obstacleHeight = 28;
+const obstacleMinSpeed = 4.5;
+const obstacleMaxSpeed = 6;
 const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
@@ -52,8 +54,6 @@ window.addEventListener("keyup", (event) => {
 });
 
 // 장애물 애니메이션 설정 (이동 속도는 픽셀/프레임)
-const obstacleMinSpeed = 3.5;
-const obstacleMaxSpeed = 4.5;
 const obstacleScaleChange = 0.015;
 
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
