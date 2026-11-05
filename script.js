@@ -10,11 +10,22 @@ const playerSize = 32;
 const destinationSize = 32;
 const obstacleWidth = 42;
 const obstacleHeight = 28;
-const obstacleMinSpeed = 12;
-const obstacleMaxSpeed = 16;
+const obstacleMinSpeed = 24;
+const obstacleMaxSpeed = 48;
+const obstacleScaleChange = 0.015;
 const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
+
+function getDifferentObstacleSpeed(previousSpeed) {
+  const nextSpeed =
+    obstacleMinSpeed + Math.random() * (obstacleMaxSpeed - obstacleMinSpeed);
+  return nextSpeed === previousSpeed
+    ? previousSpeed === obstacleMinSpeed
+      ? obstacleMaxSpeed
+      : obstacleMinSpeed
+    : nextSpeed;
+}
 
 const initialRoadHeight = canvas.height / 8;
 console.log(
@@ -52,9 +63,6 @@ window.addEventListener("keyup", (event) => {
   preventPageScroll(event);
   keys[event.code] = false;
 });
-
-// 장애물 애니메이션 설정 (이동 속도는 픽셀/프레임)
-const obstacleScaleChange = 0.015;
 
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
@@ -127,8 +135,7 @@ function drawScene(deltaTime) {
     const x = obstacle.x - (width - obstacleWidth) / 2;
     if (x + width <= 0) {
       obstacle.x = canvas.width;
-      obstacle.speed =
-        obstacleMinSpeed + Math.random() * (obstacleMaxSpeed - obstacleMinSpeed);
+      obstacle.speed = getDifferentObstacleSpeed(obstacle.speed);
     }
   });
 
