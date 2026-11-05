@@ -20,6 +20,11 @@ console.log(
 );
 
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
+/*
+| 120 | 다소 느림 | 탈락 |
+| 240 | 적당 | 채택 |
+| 300 | 다소 빠름? | 탈락 |
+*/
 const playerSpeed = 240;
 const maxFrameTime = 0.05;
 
@@ -122,6 +127,8 @@ function drawScene(deltaTime) {
     const x = obstacle.x - (width - obstacleWidth) / 2;
     if (x + width <= 0) {
       obstacle.x = canvas.width;
+      obstacle.speed =
+        obstacleMinSpeed + Math.random() * (obstacleMaxSpeed - obstacleMinSpeed);
     }
   });
 
