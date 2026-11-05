@@ -39,7 +39,7 @@ console.log(
 | 240 | 적당 | 채택 |
 | 300 | 다소 빠름? | 탈락 |
 */
-const playerSpeed = 480;
+const playerSpeed = 240;
 const maxFrameTime = 0.05;
 
 // 누르고 있는 키와 플레이어의 이동량을 기록합니다.
