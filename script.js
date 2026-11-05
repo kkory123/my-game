@@ -14,6 +14,11 @@ const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
 
+const initialRoadHeight = canvas.height / 8;
+console.log(
+  `플레이어 위치: x=${(canvas.width - playerSize) / 2}, y=${canvas.height - initialRoadHeight + (initialRoadHeight - playerSize) / 2}`,
+);
+
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
 const playerSpeed = 240;
 const maxFrameTime = 0.05;
