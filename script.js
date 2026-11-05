@@ -5,17 +5,9 @@ const canvas = document.getElementById("game");
 // 캔버스에 2D 그림을 그리는 도구를 가져옵니다.
 const ctx = canvas.getContext("2d");
 
-// 화면 크기에 맞춘 길과 사각형의 크기, 위치를 모아 둡니다.
-const playerSize = 32;
-const destinationSize = 32;
-const obstacleWidth = 42;
-const obstacleHeight = 28;
+// 장애물 속도 설정 (픽셀/프레임)
 const obstacleMinSpeed = 24;
-const obstacleMaxSpeed = 48;
-const obstacleScaleChange = 0.015;
-const livesTextX = 12;
-const livesTextY = 28;
-const livesFont = "20px sans-serif";
+const obstacleMaxSpeed = 36;
 
 function getDifferentObstacleSpeed(previousSpeed) {
   const nextSpeed =
@@ -26,6 +18,15 @@ function getDifferentObstacleSpeed(previousSpeed) {
       : obstacleMinSpeed
     : nextSpeed;
 }
+
+// 화면 크기에 맞춘 길과 사각형의 크기, 위치를 모아 둡니다.
+const playerSize = 32;
+const destinationSize = 32;
+const obstacleWidth = 42;
+const obstacleHeight = 28;
+const livesTextX = 12;
+const livesTextY = 28;
+const livesFont = "20px sans-serif";
 
 const initialRoadHeight = canvas.height / 8;
 console.log(
@@ -63,6 +64,9 @@ window.addEventListener("keyup", (event) => {
   preventPageScroll(event);
   keys[event.code] = false;
 });
+
+// 장애물 크기 애니메이션 설정
+const obstacleScaleChange = 0.015;
 
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
