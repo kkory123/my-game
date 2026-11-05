@@ -249,6 +249,11 @@ function drawScene(deltaTime) {
 
   // 게임 오버 상태에서도 화면은 계속 그리되 게임 오버 안내를 표시합니다.
   if (gameState === "gameover") {
+    // 캔버스 전체에 옅은 빨간색 반투명 레이어를 덮습니다.
+    ctx.fillStyle = "rgba(255, 0, 0, 0.35)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 게임 오버 문구를 레이어 위에 표시합니다.
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
