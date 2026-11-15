@@ -13,8 +13,9 @@ const obstacleMaxSpeed = 10;
 const obstacleWidth = 42 * 1.2 * 1.2;
 const obstacleHeight = 28 * 1.2;
 
-// 빨간 테두리 히트박스를 표시할지 설정합니다.
-const showHitbox = true;
+// 디버그 정보와 빨간 테두리 히트박스를 표시할지 설정합니다.
+let showDebug = true;
+let showHitbox = showDebug;
 
 function getDifferentObstacleSpeed(previousSpeed) {
   const nextSpeed =
@@ -70,6 +71,10 @@ function preventPageScroll(event) {
 
 window.addEventListener("keydown", (event) => {
   preventPageScroll(event);
+  if (event.code === "KeyV" && !event.repeat) {
+    showDebug = !showDebug;
+    showHitbox = showDebug;
+  }
   if (gameState === "gameover" && event.code === "KeyR") {
     resetGame();
     return;
@@ -229,6 +234,17 @@ function drawScene(deltaTime) {
   ctx.fillStyle = "white";
   ctx.font = livesFont;
   ctx.fillText(`남은 목숨 : ${lives}`, livesTextX, livesTextY);
+
+  if (showDebug) {
+    ctx.fillStyle = "white";
+    ctx.font = "14px sans-serif";
+    ctx.fillText(
+      `플레이어 X: ${playerX.toFixed(1)}, Y: ${playerY.toFixed(1)}`,
+      livesTextX,
+      livesTextY + 22,
+    );
+    ctx.fillText(`적 수: ${obstacles.length}`, livesTextX, livesTextY + 42);
+  }
 
   // 화면 아래 가운데에 노란색 플레이어를 그립니다.
   ctx.fillStyle = "yellow";
