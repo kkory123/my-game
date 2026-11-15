@@ -6,16 +6,15 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 // 장애물 속도 설정 (픽셀/프레임)
-const obstacleMinSpeed = 4;
-const obstacleMaxSpeed = 8;
+const obstacleMinSpeed = 8;
+const obstacleMaxSpeed = 10;
 
 // 장애물 크기 설정
 const obstacleWidth = 42 * 1.2 * 1.2;
 const obstacleHeight = 28 * 1.2;
 
-// 디버그 정보와 히트박스를 표시할지 설정합니다.
-let showDebug = true;
-let showHitbox = showDebug;
+// 빨간 테두리 히트박스를 표시할지 설정합니다.
+const showHitbox = true;
 
 function getDifferentObstacleSpeed(previousSpeed) {
   const nextSpeed =
@@ -34,8 +33,6 @@ const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
 const startingLives = 3;
-let lives = startingLives;
-let gameState = "playing";
 
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
 /*
@@ -61,10 +58,6 @@ function preventPageScroll(event) {
 
 window.addEventListener("keydown", (event) => {
   preventPageScroll(event);
-  if (event.code === "KeyR" && !event.repeat) {
-    showDebug = !showDebug;
-    showHitbox = showDebug;
-  }
   keys[event.code] = true;
 });
 
@@ -88,6 +81,7 @@ const obstacles = [
     x,
     initialX: x,
     lane,
+    scale: 1,
     speed:
       obstacleMinSpeed +
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
@@ -96,15 +90,6 @@ const obstacles = [
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
   })),
 ];
-
-function checkCollision(first, second) {
-  return (
-    first.x < second.x + second.width &&
-    first.x + first.width > second.x &&
-    first.y < second.y + second.height &&
-    first.y + first.height > second.y
-  );
-}
 
 // 플레이어와 장애물의 위치 및 속도를 초기 상태로 되돌립니다.
 function resetGame() {
@@ -254,25 +239,6 @@ function drawScene(deltaTime) {
     const y = (obstacle.lane - 0.5) * roadHeight - height / 2;
     ctx.fillRect(x, y, width, height);
   });
-
-  if (showDebug) {
-    const debugLines = [
-      `player: x ${playerX.toFixed(1)}, y ${playerY.toFixed(1)}`,
-      `red enemies: ${obstacles.length}`,
-    ];
-    const panelWidth = 180;
-    const lineHeight = 16;
-    const panelX = canvas.width - panelWidth - 8;
-    const panelY = 8;
-
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(panelX, panelY, panelWidth, debugLines.length * lineHeight + 10);
-    ctx.fillStyle = "white";
-    ctx.font = "12px monospace";
-    debugLines.forEach((line, index) => {
-      ctx.fillText(line, panelX + 6, panelY + 16 + index * lineHeight);
-    });
-  }
 }
 
 function animate(frameTime) {
