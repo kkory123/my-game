@@ -33,8 +33,6 @@ const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
 const startingLives = 3;
-let lives = startingLives;
-let gameState = "playing";
 
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
 /*
@@ -50,6 +48,18 @@ const keys = {};
 let playerOffsetX = 0;
 let playerOffsetY = 0;
 let previousFrameTime = 0;
+let gameState = "playing";
+let lives = startingLives;
+
+// 두 사각형이 가로와 세로 방향 모두에서 겹치는지 확인합니다.
+function checkCollision(rectA, rectB) {
+  return (
+    rectA.x < rectB.x + rectB.width &&
+    rectA.x + rectA.width > rectB.x &&
+    rectA.y < rectB.y + rectB.height &&
+    rectA.y + rectA.height > rectB.y
+  );
+}
 
 // 방향키와 스페이스바가 페이지를 스크롤하지 않도록 막습니다.
 function preventPageScroll(event) {
@@ -60,6 +70,10 @@ function preventPageScroll(event) {
 
 window.addEventListener("keydown", (event) => {
   preventPageScroll(event);
+  if (gameState === "gameover" && event.code === "KeyR") {
+    resetGame();
+    return;
+  }
   keys[event.code] = true;
 });
 
@@ -83,7 +97,6 @@ const obstacles = [
     x,
     initialX: x,
     lane,
-    scale: 1,
     speed:
       obstacleMinSpeed +
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
@@ -92,15 +105,6 @@ const obstacles = [
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
   })),
 ];
-
-function checkCollision(first, second) {
-  return (
-    first.x < second.x + second.width &&
-    first.x + first.width > second.x &&
-    first.y < second.y + second.height &&
-    first.y + first.height > second.y
-  );
-}
 
 // 플레이어와 장애물의 위치 및 속도를 초기 상태로 되돌립니다.
 function resetGame() {
@@ -244,12 +248,32 @@ function drawScene(deltaTime) {
   // 설정한 여섯 위치에 빨간색 장애물을 하나씩 그립니다.
   ctx.fillStyle = "red";
   obstacles.forEach((obstacle) => {
-    const width = obstacleWidth * obstacle.scale;
-    const height = obstacleHeight * obstacle.scale;
-    const x = obstacle.x - (width - obstacleWidth) / 2;
-    const y = (obstacle.lane - 0.5) * roadHeight - height / 2;
-    ctx.fillRect(x, y, width, height);
+    const obstacleY = (obstacle.lane - 0.5) * roadHeight - obstacleHeight / 2;
+    ctx.fillRect(obstacle.x, obstacleY, obstacleWidth, obstacleHeight);
+    if (showHitbox) {
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(obstacle.x, obstacleY, obstacleWidth, obstacleHeight);
+    }
   });
+
+  // 게임 오버 상태에서도 화면은 계속 그리되 게임 오버 안내를 표시합니다.
+  if (gameState === "gameover") {
+    // 캔버스 전체에 옅은 빨간색 반투명 레이어를 덮습니다.
+    ctx.fillStyle = "rgba(255, 0, 0, 0.18)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 게임 오버 문구를 레이어 위에 표시합니다.
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 48px sans-serif";
+    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+    ctx.font = "20px sans-serif";
+    ctx.fillText("R 키를 눌러 다시 시작", canvas.width / 2, canvas.height / 2 + 28);
+    ctx.textAlign = "start";
+    ctx.textBaseline = "alphabetic";
+  }
 }
 
 function animate(frameTime) {
