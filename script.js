@@ -21,6 +21,10 @@ const keys = {};
 let playerOffsetX = 0;
 let playerOffsetY = 0;
 let previousFrameTime = 0;
+let showDebug = true;
+let showHitbox = true;
+const gameState = "playing";
+let score = 0;
 
 // 방향키와 스페이스바가 페이지를 스크롤하지 않도록 막습니다.
 function preventPageScroll(event) {
@@ -31,6 +35,10 @@ function preventPageScroll(event) {
 
 window.addEventListener("keydown", (event) => {
   preventPageScroll(event);
+  if (event.code === "KeyD" && !event.repeat) {
+    showDebug = !showDebug;
+    showHitbox = showDebug;
+  }
   keys[event.code] = true;
 });
 
@@ -172,6 +180,43 @@ function drawScene(deltaTime) {
     const y = (obstacle.lane - 0.5) * roadHeight - height / 2;
     ctx.fillRect(x, y, width, height);
   });
+
+  if (showHitbox) {
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#00ffff";
+    ctx.strokeRect(playerX, playerY, playerSize, playerSize);
+    ctx.strokeStyle = "#adff2f";
+    ctx.strokeRect(destinationX, destinationY, destinationSize, destinationSize);
+    ctx.strokeStyle = "#ffff00";
+    obstacles.forEach((obstacle) => {
+      const width = obstacleWidth * obstacle.scale;
+      const height = obstacleHeight * obstacle.scale;
+      const x = obstacle.x - (width - obstacleWidth) / 2;
+      const y = (obstacle.lane - 0.5) * roadHeight - height / 2;
+      ctx.strokeRect(x, y, width, height);
+    });
+  }
+
+  if (showDebug) {
+    const debugLines = [
+      `player: x ${playerX.toFixed(1)}, y ${playerY.toFixed(1)}`,
+      `red enemies: ${obstacles.length}`,
+      `gameState: ${gameState}`,
+      `score: ${score}`,
+    ];
+    const panelWidth = 220;
+    const lineHeight = 16;
+    const panelX = canvas.width - panelWidth - 8;
+    const panelY = 8;
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(panelX, panelY, panelWidth, debugLines.length * lineHeight + 10);
+    ctx.fillStyle = "white";
+    ctx.font = "12px monospace";
+    debugLines.forEach((line, index) => {
+      ctx.fillText(line, panelX + 6, panelY + 16 + index * lineHeight);
+    });
+  }
 }
 
 function animate(frameTime) {
