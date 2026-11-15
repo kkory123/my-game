@@ -1,18 +1,45 @@
+console.log("게임 스크립트 실행 확인");
+
 // HTML에서 id가 "game"인 캔버스 요소를 가져옵니다.
 const canvas = document.getElementById("game");
 // 캔버스에 2D 그림을 그리는 도구를 가져옵니다.
 const ctx = canvas.getContext("2d");
 
+// 장애물 속도 설정 (픽셀/프레임)
+const obstacleMinSpeed = 8;
+const obstacleMaxSpeed = 10;
+
+// 장애물 크기 설정
+const obstacleWidth = 42 * 1.2 * 1.2;
+const obstacleHeight = 28 * 1.2;
+
+// 빨간 테두리 히트박스를 표시할지 설정합니다.
+const showHitbox = true;
+
+function getDifferentObstacleSpeed(previousSpeed) {
+  const nextSpeed =
+    obstacleMinSpeed + Math.random() * (obstacleMaxSpeed - obstacleMinSpeed);
+  return nextSpeed === previousSpeed
+    ? previousSpeed === obstacleMinSpeed
+      ? obstacleMaxSpeed
+      : obstacleMinSpeed
+    : nextSpeed;
+}
+
 // 화면 크기에 맞춘 길과 사각형의 크기, 위치를 모아 둡니다.
 const playerSize = 32;
 const destinationSize = 32;
-const obstacleWidth = 42;
-const obstacleHeight = 28;
 const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
+const startingLives = 3;
 
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
+/*
+| 120 | 다소 느림 | 탈락 |
+| 240 | 적당 | 채택 |
+| 300 | 다소 빠름? | 탈락 |
+*/
 const playerSpeed = 240;
 const maxFrameTime = 0.05;
 
@@ -21,10 +48,6 @@ const keys = {};
 let playerOffsetX = 0;
 let playerOffsetY = 0;
 let previousFrameTime = 0;
-let showDebug = true;
-let showHitbox = true;
-const gameState = "playing";
-let score = 0;
 
 // 방향키와 스페이스바가 페이지를 스크롤하지 않도록 막습니다.
 function preventPageScroll(event) {
@@ -35,10 +58,6 @@ function preventPageScroll(event) {
 
 window.addEventListener("keydown", (event) => {
   preventPageScroll(event);
-  if (event.code === "KeyD" && !event.repeat) {
-    showDebug = !showDebug;
-    showHitbox = showDebug;
-  }
   keys[event.code] = true;
 });
 
@@ -46,11 +65,6 @@ window.addEventListener("keyup", (event) => {
   preventPageScroll(event);
   keys[event.code] = false;
 });
-
-// 장애물 애니메이션 설정 (이동 속도는 픽셀/프레임)
-const obstacleMinSpeed = 3.5;
-const obstacleMaxSpeed = 4.5;
-const obstacleScaleChange = 0.015;
 
 // 각 장애물의 가로 위치와 레인 번호를 정합니다.
 const obstacleLanes = [
@@ -65,61 +79,100 @@ const obstacleLanes = [
 const obstacles = [
   ...obstacleLanes.map(({ x, lane }, index) => ({
     x,
+    initialX: x,
     lane,
     speed:
       obstacleMinSpeed +
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
-    scale: 1,
-    scaleDirection: 1,
+    initialSpeed:
+      obstacleMinSpeed +
+      (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
   })),
 ];
+
+// 플레이어와 장애물의 위치 및 속도를 초기 상태로 되돌립니다.
+function resetGame() {
+  playerOffsetX = 0;
+  playerOffsetY = 0;
+  previousFrameTime = 0;
+  lives = startingLives;
+  Object.keys(keys).forEach((key) => {
+    keys[key] = false;
+  });
+  obstacles.forEach((obstacle) => {
+    obstacle.x = obstacle.initialX;
+    obstacle.speed = obstacle.initialSpeed;
+  });
+  gameState = "playing";
+}
 
 function drawScene(deltaTime) {
   const roadHeight = canvas.height / 8;
   const destinationX = (canvas.width - destinationSize) / 2;
   const destinationY = (roadHeight - destinationSize) / 2;
-  const obstacleMaxScale = 1 + (((roadHeight - 4) / obstacleHeight) - 1) * 0.9;
-
-  const horizontalDirection =
-    Number(keys.ArrowRight || keys.KeyD) - Number(keys.ArrowLeft || keys.KeyA);
-  const verticalDirection =
-    Number(keys.ArrowDown || keys.KeyS) - Number(keys.ArrowUp || keys.KeyW);
   const initialPlayerX = (canvas.width - playerSize) / 2;
   const initialPlayerY = (canvas.height - roadHeight) + (roadHeight - playerSize) / 2;
-  const playerX = Math.max(
-    0,
-    Math.min(
-      canvas.width - playerSize,
-      initialPlayerX + playerOffsetX + horizontalDirection * playerSpeed * deltaTime,
-    ),
-  );
-  const playerY = Math.max(
-    0,
-    Math.min(
-      canvas.height - playerSize,
-      initialPlayerY + playerOffsetY + verticalDirection * playerSpeed * deltaTime,
-    ),
-  );
-  playerOffsetX = playerX - initialPlayerX;
-  playerOffsetY = playerY - initialPlayerY;
+  let playerX = initialPlayerX + playerOffsetX;
+  let playerY = initialPlayerY + playerOffsetY;
 
-  obstacles.forEach((obstacle) => {
-    obstacle.x -= obstacle.speed;
-    obstacle.scale += obstacleScaleChange * obstacle.scaleDirection;
-    if (obstacle.scale >= obstacleMaxScale) {
-      obstacle.scale = obstacleMaxScale;
-      obstacle.scaleDirection = -1;
-    } else if (obstacle.scale <= 1) {
-      obstacle.scale = 1;
-      obstacle.scaleDirection = 1;
-    }
+  // 플레이 중일 때만 플레이어와 장애물을 움직이고 충돌을 확인합니다.
+  if (gameState === "playing") {
+    const horizontalDirection =
+      (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+    const verticalDirection =
+      (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+    playerX = Math.max(
+      0,
+      Math.min(
+        canvas.width - playerSize,
+        playerX + horizontalDirection * playerSpeed * deltaTime,
+      ),
+    );
+    playerY = Math.max(
+      0,
+      Math.min(
+        canvas.height - playerSize,
+        playerY + verticalDirection * playerSpeed * deltaTime,
+      ),
+    );
+    playerOffsetX = playerX - initialPlayerX;
+    playerOffsetY = playerY - initialPlayerY;
 
-    const width = obstacleWidth * obstacle.scale;
-    const x = obstacle.x - (width - obstacleWidth) / 2;
-    if (x + width <= 0) {
-      obstacle.x = canvas.width;
+    obstacles.forEach((obstacle) => {
+      obstacle.x -= obstacle.speed;
+      if (obstacle.x + obstacleWidth <= 0) {
+        obstacle.x = canvas.width;
+        obstacle.speed = getDifferentObstacleSpeed(obstacle.speed);
+      }
+    });
+
+    // 플레이어와 장애물의 사각형이 겹치는지 확인합니다.
+    const playerHitbox = {
+      x: playerX,
+      y: playerY,
+      width: playerSize,
+      height: playerSize,
+    };
+    const isColliding = obstacles.some((obstacle) =>
+      checkCollision(playerHitbox, {
+        x: obstacle.x,
+        y: (obstacle.lane - 0.5) * roadHeight - obstacleHeight / 2,
+        width: obstacleWidth,
+        height: obstacleHeight,
+      }),
+    );
+    if (isColliding) {
+      console.log("충돌!");
+      lives -= 1;
+      playerOffsetX = 0;
+      playerOffsetY = 0;
+      playerX = initialPlayerX;
+      playerY = initialPlayerY;
+      if (lives === 0) {
+        gameState = "gameover";
+      }
     }
-  });
+  }
 
   // 화면 전체를 초록색 들판으로 채웁니다.
   ctx.fillStyle = "#4caf50";
@@ -159,11 +212,16 @@ function drawScene(deltaTime) {
   // 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
   ctx.fillStyle = "white";
   ctx.font = livesFont;
-  ctx.fillText("남은 목숨 : 3", livesTextX, livesTextY);
+  ctx.fillText(`남은 목숨 : ${lives}`, livesTextX, livesTextY);
 
-  // 화면 아래 가운데에 파란색 플레이어를 그립니다.
-  ctx.fillStyle = "blue";
+  // 화면 아래 가운데에 노란색 플레이어를 그립니다.
+  ctx.fillStyle = "yellow";
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
+  if (showHitbox) {
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(playerX, playerY, playerSize, playerSize);
+  }
 
   // 화면 위 가운데에 초록색 목적지를 그립니다.
   ctx.fillStyle = "green";
@@ -180,43 +238,6 @@ function drawScene(deltaTime) {
     const y = (obstacle.lane - 0.5) * roadHeight - height / 2;
     ctx.fillRect(x, y, width, height);
   });
-
-  if (showHitbox) {
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "#00ffff";
-    ctx.strokeRect(playerX, playerY, playerSize, playerSize);
-    ctx.strokeStyle = "#adff2f";
-    ctx.strokeRect(destinationX, destinationY, destinationSize, destinationSize);
-    ctx.strokeStyle = "#ffff00";
-    obstacles.forEach((obstacle) => {
-      const width = obstacleWidth * obstacle.scale;
-      const height = obstacleHeight * obstacle.scale;
-      const x = obstacle.x - (width - obstacleWidth) / 2;
-      const y = (obstacle.lane - 0.5) * roadHeight - height / 2;
-      ctx.strokeRect(x, y, width, height);
-    });
-  }
-
-  if (showDebug) {
-    const debugLines = [
-      `player: x ${playerX.toFixed(1)}, y ${playerY.toFixed(1)}`,
-      `red enemies: ${obstacles.length}`,
-      `gameState: ${gameState}`,
-      `score: ${score}`,
-    ];
-    const panelWidth = 220;
-    const lineHeight = 16;
-    const panelX = canvas.width - panelWidth - 8;
-    const panelY = 8;
-
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(panelX, panelY, panelWidth, debugLines.length * lineHeight + 10);
-    ctx.fillStyle = "white";
-    ctx.font = "12px monospace";
-    debugLines.forEach((line, index) => {
-      ctx.fillText(line, panelX + 6, panelY + 16 + index * lineHeight);
-    });
-  }
 }
 
 function animate(frameTime) {
