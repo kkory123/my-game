@@ -33,6 +33,8 @@ const livesTextX = 12;
 const livesTextY = 28;
 const livesFont = "20px sans-serif";
 const startingLives = 3;
+let lives = startingLives;
+let gameState = "playing";
 
 // 플레이어 이동 속도와 프레임 간 최대 시간을 정합니다.
 /*
@@ -90,6 +92,15 @@ const obstacles = [
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
   })),
 ];
+
+function checkCollision(first, second) {
+  return (
+    first.x < second.x + second.width &&
+    first.x + first.width > second.x &&
+    first.y < second.y + second.height &&
+    first.y + first.height > second.y
+  );
+}
 
 // 플레이어와 장애물의 위치 및 속도를 초기 상태로 되돌립니다.
 function resetGame() {
