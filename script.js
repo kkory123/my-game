@@ -4,6 +4,11 @@ console.log("게임 스크립트 실행 확인");
 const canvas = document.getElementById("game");
 // 캔버스에 2D 그림을 그리는 도구를 가져옵니다.
 const ctx = canvas.getContext("2d");
+const lobbyCanvas = document.getElementById("lobby");
+const lobbyCtx = lobbyCanvas.getContext("2d");
+const lobbyScreen = document.getElementById("lobby-screen");
+const gameScreen = document.getElementById("game-screen");
+const startButton = document.getElementById("start-btn");
 
 // 장애물 속도 설정 (픽셀/프레임)
 const obstacleMinSpeed = 8;
@@ -49,7 +54,7 @@ const keys = {};
 let playerOffsetX = 0;
 let playerOffsetY = 0;
 let previousFrameTime = 0;
-let gameState = "playing";
+let gameState = "lobby";
 let lives = startingLives;
 
 // 두 사각형이 가로와 세로 방향 모두에서 겹치는지 확인합니다.
@@ -127,6 +132,43 @@ function resetGame() {
   gameState = "playing";
 }
 
+function drawBackground(context, targetCanvas) {
+  const roadHeight = targetCanvas.height / 8;
+
+  // 화면 전체를 초록색 들판으로 채웁니다.
+  context.fillStyle = "#4caf50";
+  context.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+
+  // 화면 아래쪽 1/8과 위쪽 1/8을 회색 길로 그립니다.
+  context.fillStyle = "#777";
+  context.fillRect(0, targetCanvas.height - roadHeight, targetCanvas.width, roadHeight);
+  context.fillRect(0, 0, targetCanvas.width, roadHeight);
+
+  // 장애물이 다니는 여섯 레인을 짙은 회색으로 칠합니다.
+  context.fillStyle = "#333";
+  context.fillRect(0, roadHeight, targetCanvas.width, roadHeight * 6);
+
+  // 레인 경계를 얇은 노란색 선으로 표시합니다.
+  context.strokeStyle = "#ffd600";
+  context.lineWidth = 2;
+  for (let laneEdge = 1; laneEdge <= 7; laneEdge += 1) {
+    const y = laneEdge * roadHeight;
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(targetCanvas.width, y);
+    context.stroke();
+  }
+
+  // 각 레인 중앙에 일정한 간격으로 흰색 도로 표시를 그립니다.
+  context.fillStyle = "white";
+  for (let lane = 2; lane <= 7; lane += 1) {
+    const markerY = (lane - 0.5) * roadHeight - 2;
+    for (let x = 16; x < targetCanvas.width; x += 48) {
+      context.fillRect(x, markerY, 18, 4);
+    }
+  }
+}
+
 function drawScene(deltaTime) {
   const roadHeight = canvas.height / 8;
   const destinationX = (canvas.width - destinationSize) / 2;
@@ -195,40 +237,7 @@ function drawScene(deltaTime) {
     }
   }
 
-  // 화면 전체를 초록색 들판으로 채웁니다.
-  ctx.fillStyle = "#4caf50";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // 화면 아래쪽 1/8을 회색 길로 그립니다.
-  ctx.fillStyle = "#777";
-  ctx.fillRect(0, canvas.height - roadHeight, canvas.width, roadHeight);
-
-  // 화면 위쪽 1/8을 회색 길로 그립니다.
-  ctx.fillRect(0, 0, canvas.width, roadHeight);
-
-  // 장애물이 다니는 여섯 레인을 짙은 회색으로 칠합니다.
-  ctx.fillStyle = "#333";
-  ctx.fillRect(0, roadHeight, canvas.width, roadHeight * 6);
-
-  // 레인 경계를 얇은 노란색 선으로 표시합니다.
-  ctx.strokeStyle = "#ffd600";
-  ctx.lineWidth = 2;
-  for (let laneEdge = 1; laneEdge <= 7; laneEdge += 1) {
-    const y = laneEdge * roadHeight;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
-
-  // 각 레인 중앙에 일정한 간격으로 흰색 도로 표시를 그립니다.
-  ctx.fillStyle = "white";
-  for (let lane = 2; lane <= 7; lane += 1) {
-    const markerY = (lane - 0.5) * roadHeight - 2;
-    for (let x = 16; x < canvas.width; x += 48) {
-      ctx.fillRect(x, markerY, 18, 4);
-    }
-  }
+  drawBackground(ctx, canvas);
 
   // 화면 왼쪽 위에 남은 목숨을 흰 글씨로 표시합니다.
   ctx.fillStyle = "white";
@@ -291,6 +300,13 @@ function drawScene(deltaTime) {
     ctx.textBaseline = "alphabetic";
   }
 }
+
+drawBackground(lobbyCtx, lobbyCanvas);
+startButton.addEventListener("click", () => {
+  lobbyScreen.style.display = "none";
+  gameScreen.style.display = "block";
+  resetGame();
+});
 
 function animate(frameTime) {
   // 프레임 간격을 제한해 탭 전환 후에도 플레이어가 갑자기 튀지 않게 합니다.
