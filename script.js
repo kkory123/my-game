@@ -9,6 +9,8 @@ const lobbyCtx = lobbyCanvas.getContext("2d");
 const lobbyScreen = document.getElementById("lobby-screen");
 const gameScreen = document.getElementById("game-screen");
 const startButton = document.getElementById("start-btn");
+const hitSound = new Audio("sound/hit.mp3");
+hitSound.preload = "auto";
 
 // 장애물 속도 설정 (픽셀/프레임)
 const obstacleMinSpeed = 8;
@@ -56,6 +58,35 @@ let playerOffsetY = 0;
 let previousFrameTime = 0;
 let gameState = "lobby";
 let lives = startingLives;
+let isMuted = false;
+let hitSoundAvailable = true;
+let wasColliding = false;
+
+function handleHitSoundError(error) {
+  if (!hitSoundAvailable) {
+    return;
+  }
+  hitSoundAvailable = false;
+  console.warn("충돌 효과음을 재생할 수 없습니다.", error);
+}
+
+hitSound.addEventListener("error", handleHitSoundError);
+
+function playHitSound() {
+  if (isMuted || !hitSoundAvailable) {
+    return;
+  }
+
+  try {
+    hitSound.currentTime = 0;
+    const playback = hitSound.play();
+    if (playback) {
+      playback.catch(handleHitSoundError);
+    }
+  } catch (error) {
+    handleHitSoundError(error);
+  }
+}
 
 // 두 사각형이 가로와 세로 방향 모두에서 겹치는지 확인합니다.
 function checkCollision(rectA, rectB) {
@@ -79,6 +110,10 @@ window.addEventListener("keydown", (event) => {
   if (event.code === "KeyV" && !event.repeat) {
     showDebug = !showDebug;
     showHitbox = showDebug;
+  }
+  if (event.code === "KeyM" && !event.repeat) {
+    isMuted = !isMuted;
+    hitSound.muted = isMuted;
   }
   if (gameState === "gameover" && event.code === "KeyR") {
     resetGame();
@@ -122,6 +157,7 @@ function resetGame() {
   playerOffsetY = 0;
   previousFrameTime = 0;
   lives = startingLives;
+  wasColliding = false;
   Object.keys(keys).forEach((key) => {
     keys[key] = false;
   });
@@ -224,8 +260,9 @@ function drawScene(deltaTime) {
         height: obstacleHeight,
       }),
     );
-    if (isColliding) {
+    if (isColliding && !wasColliding) {
       console.log("충돌!");
+      playHitSound();
       lives -= 1;
       playerOffsetX = 0;
       playerOffsetY = 0;
@@ -235,6 +272,7 @@ function drawScene(deltaTime) {
         gameState = "gameover";
       }
     }
+    wasColliding = isColliding;
   }
 
   drawBackground(ctx, canvas);
@@ -243,6 +281,12 @@ function drawScene(deltaTime) {
   ctx.fillStyle = "white";
   ctx.font = livesFont;
   ctx.fillText(`남은 목숨 : ${lives}`, livesTextX, livesTextY);
+
+  ctx.fillStyle = "white";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText(`${isMuted ? "음소거" : "소리 켬"} (M)`, canvas.width - 12, 18);
+  ctx.textAlign = "start";
 
   if (showDebug) {
     ctx.fillStyle = "white";
