@@ -25,6 +25,7 @@ const obstacleHeight = 28 * 1.2;
 // 디버그 정보와 빨간 테두리 히트박스를 표시할지 설정합니다.
 let showDebug = true;
 let showHitbox = showDebug;
+
 /*
 | 속도 변동(stage1 기준) | 내 체감 | 조정한 것 |
 |---|---|---|
@@ -32,9 +33,10 @@ let showHitbox = showDebug;
 | 1.5 / 3.5 | 다소 느림 | 최저, 최고치 +0.5 |
 | 2 / 4 | 다소 적당 | 속도는 적당. 플레이어 속도 변화 필요? |
 */
+
 function getStageObstacleSpeeds(stage) {
   const stageSpeedIncrease = ((stage - 1) * stage) / 2;
-  const speedAdjustment = -6 + stageSpeedIncrease;
+  const speedAdjustment = -6.5 + stageSpeedIncrease;
   return {
     minSpeed: obstacleMinSpeed + speedAdjustment,
     maxSpeed: obstacleMaxSpeed + speedAdjustment,
@@ -64,8 +66,10 @@ const startingLives = 3;
 | 120 | 다소 느림 | 탈락 |
 | 240 | 적당 | 채택 |
 | 300 | 다소 빠름? | 탈락 |
+
+++ 다소 느리므로 360으로 조정 / 26.11.23
 */
-const playerSpeed = 240;
+const playerSpeed = 360;
 const maxFrameTime = 0.05;
 
 // 누르고 있는 키와 플레이어의 이동량을 기록합니다.
