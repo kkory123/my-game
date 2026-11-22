@@ -15,6 +15,8 @@ hitSound.preload = "auto";
 // 장애물 속도 설정 (픽셀/프레임)
 const obstacleMinSpeed = 8;
 const obstacleMaxSpeed = 10;
+const stageStartDuration = 1.2;
+const stageClearDuration = 1.2;
 
 // 장애물 크기 설정
 const obstacleWidth = 42 * 1.2 * 1.2;
@@ -23,15 +25,30 @@ const obstacleHeight = 28 * 1.2;
 // 디버그 정보와 빨간 테두리 히트박스를 표시할지 설정합니다.
 let showDebug = true;
 let showHitbox = showDebug;
+/*
+| 속도 변동(stage1 기준) | 내 체감 | 조정한 것 |
+|---|---|---|
+| 최저 4 / 최고 6 (이하 4 / 6) | 너무 빠름 | 시작 속도를 최저, 최고치 -2.5 |
+| 1.5 / 3.5 | 다소 느림 | 최저, 최고치 +0.5 |
+| 2 / 4 | 다소 적당 | 속도는 적당. 플레이어 속도 변화 필요? |
+*/
+function getStageObstacleSpeeds(stage) {
+  const stageSpeedIncrease = ((stage - 1) * stage) / 2;
+  const speedAdjustment = -6 + stageSpeedIncrease;
+  return {
+    minSpeed: obstacleMinSpeed + speedAdjustment,
+    maxSpeed: obstacleMaxSpeed + speedAdjustment,
+  };
+}
 
-function getDifferentObstacleSpeed(previousSpeed) {
-  const nextSpeed =
-    obstacleMinSpeed + Math.random() * (obstacleMaxSpeed - obstacleMinSpeed);
-  return nextSpeed === previousSpeed
-    ? previousSpeed === obstacleMinSpeed
-      ? obstacleMaxSpeed
-      : obstacleMinSpeed
-    : nextSpeed;
+function applyObstacleSpeed(obstacle, stage, previousSpeed, speedRatio) {
+  const { minSpeed, maxSpeed } = getStageObstacleSpeeds(stage);
+  const speedVariation = speedRatio === undefined ? Math.random() : speedRatio;
+  let nextSpeed = minSpeed + speedVariation * (maxSpeed - minSpeed);
+  if (nextSpeed === previousSpeed) {
+    nextSpeed = previousSpeed === minSpeed ? maxSpeed : minSpeed;
+  }
+  obstacle.speed = nextSpeed;
 }
 
 // 화면 크기에 맞춘 길과 사각형의 크기, 위치를 모아 둡니다.
@@ -58,6 +75,9 @@ let playerOffsetY = 0;
 let previousFrameTime = 0;
 let gameState = "lobby";
 let lives = startingLives;
+let currentStage = 1;
+let stageTimerRemaining = 0;
+let pausedFromState = null;
 let isMuted = false;
 let hitSoundAvailable = true;
 let wasColliding = false;
@@ -115,7 +135,25 @@ window.addEventListener("keydown", (event) => {
     isMuted = !isMuted;
     hitSound.muted = isMuted;
   }
-  if (gameState === "gameover" && event.code === "KeyR") {
+  if (event.code === "Space" && !event.repeat) {
+    if (gameState === "paused") {
+      gameState = pausedFromState;
+      pausedFromState = null;
+      previousFrameTime = 0;
+      Object.keys(keys).forEach((key) => {
+        keys[key] = false;
+      });
+    } else if (["stageStart", "playing", "stageClear"].includes(gameState)) {
+      pausedFromState = gameState;
+      gameState = "paused";
+      previousFrameTime = 0;
+      Object.keys(keys).forEach((key) => {
+        keys[key] = false;
+      });
+    }
+    return;
+  }
+  if (gameState === "gameover" && event.code === "KeyR" && !event.repeat) {
     resetGame();
     return;
   }
@@ -142,6 +180,7 @@ const obstacles = [
     x,
     initialX: x,
     lane,
+    speedRatio: index / (obstacleLanes.length - 1),
     speed:
       obstacleMinSpeed +
       (index * (obstacleMaxSpeed - obstacleMinSpeed)) / (obstacleLanes.length - 1),
@@ -153,9 +192,29 @@ const obstacles = [
 
 // 플레이어와 장애물의 위치 및 속도를 초기 상태로 되돌립니다.
 function resetGame() {
+  currentStage = 1;
   playerOffsetX = 0;
   playerOffsetY = 0;
   previousFrameTime = 0;
+  lives = startingLives;
+  wasColliding = false;
+  pausedFromState = null;
+  Object.keys(keys).forEach((key) => {
+    keys[key] = false;
+  });
+  obstacles.forEach((obstacle) => {
+    obstacle.x = obstacle.initialX;
+    applyObstacleSpeed(obstacle, currentStage, undefined, obstacle.speedRatio);
+    obstacle.initialSpeed = obstacle.speed;
+  });
+  stageTimerRemaining = stageStartDuration;
+  gameState = "stageStart";
+}
+
+function startNextStage() {
+  currentStage += 1;
+  playerOffsetX = 0;
+  playerOffsetY = 0;
   lives = startingLives;
   wasColliding = false;
   Object.keys(keys).forEach((key) => {
@@ -163,9 +222,11 @@ function resetGame() {
   });
   obstacles.forEach((obstacle) => {
     obstacle.x = obstacle.initialX;
-    obstacle.speed = obstacle.initialSpeed;
+    applyObstacleSpeed(obstacle, currentStage, undefined, obstacle.speedRatio);
+    obstacle.initialSpeed = obstacle.speed;
   });
-  gameState = "playing";
+  stageTimerRemaining = stageStartDuration;
+  gameState = "stageStart";
 }
 
 function drawBackground(context, targetCanvas) {
@@ -206,6 +267,19 @@ function drawBackground(context, targetCanvas) {
 }
 
 function drawScene(deltaTime) {
+  const stateAtFrameStart = gameState;
+  if (stateAtFrameStart === "stageStart") {
+    stageTimerRemaining -= deltaTime;
+    if (stageTimerRemaining <= 0) {
+      gameState = "playing";
+    }
+  } else if (stateAtFrameStart === "stageClear") {
+    stageTimerRemaining -= deltaTime;
+    if (stageTimerRemaining <= 0) {
+      startNextStage();
+    }
+  }
+
   const roadHeight = canvas.height / 8;
   const destinationX = (canvas.width - destinationSize) / 2;
   const destinationY = (roadHeight - destinationSize) / 2;
@@ -215,7 +289,7 @@ function drawScene(deltaTime) {
   let playerY = initialPlayerY + playerOffsetY;
 
   // 플레이 중일 때만 플레이어와 장애물을 움직이고 충돌을 확인합니다.
-  if (gameState === "playing") {
+  if (stateAtFrameStart === "playing") {
     const horizontalDirection =
       (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
     const verticalDirection =
@@ -241,7 +315,7 @@ function drawScene(deltaTime) {
       obstacle.x -= obstacle.speed;
       if (obstacle.x + obstacleWidth <= 0) {
         obstacle.x = canvas.width;
-        obstacle.speed = getDifferentObstacleSpeed(obstacle.speed);
+        applyObstacleSpeed(obstacle, currentStage, obstacle.speed);
       }
     });
 
@@ -273,6 +347,22 @@ function drawScene(deltaTime) {
       }
     }
     wasColliding = isColliding;
+
+    if (
+      gameState === "playing" &&
+      checkCollision(playerHitbox, {
+        x: destinationX,
+        y: destinationY,
+        width: destinationSize,
+        height: destinationSize,
+      })
+    ) {
+      gameState = "stageClear";
+      stageTimerRemaining = stageClearDuration;
+      Object.keys(keys).forEach((key) => {
+        keys[key] = false;
+      });
+    }
   }
 
   drawBackground(ctx, canvas);
@@ -325,6 +415,28 @@ function drawScene(deltaTime) {
       ctx.strokeRect(obstacle.x, obstacleY, obstacleWidth, obstacleHeight);
     }
   });
+
+  if (
+    gameState === "stageStart" ||
+    gameState === "stageClear" ||
+    gameState === "paused"
+  ) {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 48px sans-serif";
+    const bannerText =
+      gameState === "stageStart"
+        ? `Stage ${currentStage}`
+        : gameState === "stageClear"
+          ? "Stage Clear"
+          : "Paused";
+    ctx.fillText(bannerText, canvas.width / 2, canvas.height / 2);
+    ctx.textAlign = "start";
+    ctx.textBaseline = "alphabetic";
+  }
 
   // 게임 오버 상태에서도 화면은 계속 그리되 게임 오버 안내를 표시합니다.
   if (gameState === "gameover") {
