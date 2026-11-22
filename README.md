@@ -19,3 +19,9 @@
 - [o] 4주차: 오브젝트 움직이기
 - [o] 5주차: 플레이어 움직이기
 - [o] ６주차: 장애물 충돌 판정&게임오버 구현
+
+## 출처
+
+### 효과음
+1. 충돌 효과음: https://pixabay.com/ko/sound-effects/search/%EC%B6%A9%EB%8F%8C%20%EC%86%8C%EB%A6%AC/ Car Crash Sound
+2. 
