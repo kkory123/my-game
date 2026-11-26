@@ -11,6 +11,15 @@ const gameScreen = document.getElementById("game-screen");
 const startButton = document.getElementById("start-btn");
 const lobbyTitleImage = new Image();
 lobbyTitleImage.src = "img/CrossyRoad_clear.png";
+const carRedImage = new Image();
+let carRedImageLoaded = false;
+carRedImage.addEventListener("load", () => {
+  carRedImageLoaded = true;
+});
+carRedImage.addEventListener("error", () => {
+  console.error("장애물 이미지(img/car_red.png)를 불러오지 못했습니다.");
+});
+carRedImage.src = "img/car_red.png";
 const hitSound = new Audio("sound/hit.mp3");
 hitSound.preload = "auto";
 
@@ -414,7 +423,24 @@ function drawScene(deltaTime) {
   ctx.fillStyle = "red";
   obstacles.forEach((obstacle) => {
     const obstacleY = (obstacle.lane - 0.5) * roadHeight - obstacleHeight / 2;
-    ctx.fillRect(obstacle.x, obstacleY, obstacleWidth, obstacleHeight);
+    if (carRedImageLoaded) {
+      ctx.save();
+      ctx.translate(
+        obstacle.x + obstacleWidth / 2,
+        obstacleY + obstacleHeight / 2,
+      );
+      ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(
+        carRedImage,
+        -obstacleHeight / 2,
+        -obstacleWidth / 2,
+        obstacleHeight,
+        obstacleWidth,
+      );
+      ctx.restore();
+    } else {
+      ctx.fillRect(obstacle.x, obstacleY, obstacleWidth, obstacleHeight);
+    }
     if (showHitbox) {
       ctx.strokeStyle = "red";
       ctx.lineWidth = 2;

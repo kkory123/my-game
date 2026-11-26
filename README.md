@@ -25,3 +25,9 @@
 ### 효과음
 1. 충돌 효과음: https://pixabay.com/ko/sound-effects/search/%EC%B6%A9%EB%8F%8C%20%EC%86%8C%EB%A6%AC/ Car Crash Sound
 2. 
+
+### 이미지
+1. 타이틀 로고_제미나이 제작
+2. 주황 차량 이미지:
+    https://kenney.nl/assets/racing-pack
+
