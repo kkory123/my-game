@@ -9,6 +9,8 @@ const lobbyCtx = lobbyCanvas.getContext("2d");
 const lobbyScreen = document.getElementById("lobby-screen");
 const gameScreen = document.getElementById("game-screen");
 const startButton = document.getElementById("start-btn");
+const lobbyTitleImage = new Image();
+lobbyTitleImage.src = "img/CrossyRoad_clear.png";
 const hitSound = new Audio("sound/hit.mp3");
 hitSound.preload = "auto";
 
@@ -461,7 +463,26 @@ function drawScene(deltaTime) {
   }
 }
 
-drawBackground(lobbyCtx, lobbyCanvas);
+function drawLobby() {
+  drawBackground(lobbyCtx, lobbyCanvas);
+
+  if (lobbyTitleImage.complete && lobbyTitleImage.naturalWidth > 0) {
+    const maxWidth = lobbyCanvas.width * 0.7;
+    const maxHeight = lobbyCanvas.height * 0.5;
+    const scale = Math.min(
+      maxWidth / lobbyTitleImage.naturalWidth,
+      maxHeight / lobbyTitleImage.naturalHeight,
+    );
+    const titleWidth = lobbyTitleImage.naturalWidth * scale;
+    const titleHeight = lobbyTitleImage.naturalHeight * scale;
+    const titleX = (lobbyCanvas.width - titleWidth) / 2;
+    const drawY = lobbyCanvas.height * 0.45 - titleHeight / 2;
+    lobbyCtx.drawImage(lobbyTitleImage, titleX, drawY, titleWidth, titleHeight);
+  }
+}
+
+lobbyTitleImage.addEventListener("load", drawLobby);
+drawLobby();
 startButton.addEventListener("click", () => {
   lobbyScreen.style.display = "none";
   gameScreen.style.display = "block";
